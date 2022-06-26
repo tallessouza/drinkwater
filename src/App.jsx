@@ -10,16 +10,24 @@ function App() {
   const contractAddress = "0xE7ABa389cF2FeFCF1A2a85e511Bd16E716A567e2";
   const contractABI = abi.abi;
 
-  const checkWallet = async () => {
+  const checkWallet = async () =>{
     try {
       const { ethereum } = window;
       const accounts = await ethereum.request({ method: "eth_accounts" });
-
+        
       if (!ethereum) {
-        //console.log("Garanta que possua a Metamask instalada!");
+        alert("Garanta que possua a Metamask instalada!");
         return;
       } else {
-        //console.log("Temos o objeto ethereum", ethereum);
+        console.log(ethereum.chainId)
+        if (ethereum.chainId != "0x4"){
+          alert("Se conecte na rinkeby");
+          await ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x4' }],
+           }) 
+          return;
+        }
       }
 
       if (accounts.length !== 0) {
@@ -39,9 +47,10 @@ function App() {
       const { ethereum } = window;
 
       if (!ethereum) {
-        alert("MetaMask encontrada!");
+        alert("MetaMask não encontrada!");
         return;
       }
+      checkWallet()
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts" });
 
@@ -51,7 +60,7 @@ function App() {
       //console.log(error)
     }
   }
-
+  
   const drink = async () => {
     try {
       const { ethereum } = window;
@@ -81,7 +90,7 @@ function App() {
   useEffect(() => {
     checkWallet()
   }, [currentAccount])
-
+  
   const getAllDrinks = async () => {
     try {
       const { ethereum } = window;
@@ -109,7 +118,7 @@ function App() {
   }
   useEffect(() => {
     let contract;
-
+  
     const onNewDrink = (from, timestamp, message) => {
       //console.log("NewDrink", from, timestamp, message);
       setAllDrinks(prevState => [
@@ -121,15 +130,15 @@ function App() {
         },
       ]);
     };
-
+  
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-
+  
       contract = new ethers.Contract(contractAddress, contractABI, signer);
       contract.on("NewDrink", onNewDrink);
     }
-
+  
     return () => {
       if (contract) {
         contract.off("NewDrink", onNewDrink);
@@ -142,28 +151,28 @@ function App() {
       <div className="App-header">
         <h1>Quanto de água você bebeu hoje?</h1>
         <div className='cup'>
-        </div>
+        </div>    
         <h3>Seja sincero!</h3>
-        {!currentAccount ?
+        { (!currentAccount || ethereum.chainId != "0x4") ?
           <button type="button" onClick={connect}>
             Conectar
           </button>
-          :
+        :
           <>
             <input type="text" className="mensagemInput" placeholder="Responda aqui" value={mensagem} onChange={e => setMensagem(e.target.value)} />
             <button type="button" onClick={drink}>
               Responder
             </button>
             <p>As seguintes pessoas já participaram:</p>
-            {
-              allDrinks.map((drink, index) => {
-                return (
-                  <div key={index} className="card">
-                    <div>Endereço: {drink.address}</div>
-                    <div>Data/Horário: {drink.timestamp.toString()}</div>
-                    <div>Mensagem: {drink.message}</div>
-                  </div>)
-              }).reverse()}
+        {
+        allDrinks.map((drink, index) => {
+          return (
+            <div key={index} className="card">
+              <div>Endereço: {drink.address}</div>
+              <div>Data/Horário: {drink.timestamp.toString()}</div>
+              <div>Mensagem: {drink.message}</div>
+            </div>)
+          }).reverse()}
           </>
         }
         <p>Meu Git: <a href='https://github.com/tallessouza' target={'_blank'}>tallessouza</a></p>
@@ -173,4 +182,3 @@ function App() {
 }
 
 export default App
-
